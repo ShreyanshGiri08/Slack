@@ -8,12 +8,23 @@
   }
   
   .glass-header {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-200/80 dark:border-slate-800/80;
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80;
   }
 
   .glow-purple {
     box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
   }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 25s linear infinite;
 }
 
 /* Custom sleek scrollbar */

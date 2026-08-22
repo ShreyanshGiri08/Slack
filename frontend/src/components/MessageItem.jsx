@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { MessageSquare, Trash2, Smile, Plus } from 'lucide-react';
+import { MessageSquare, Trash2, Smile } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, onRemoveReaction }) => {
+export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, onRemoveReaction, onOpenUserProfile }) => {
   const { user, theme } = useAuth();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -29,34 +29,44 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={`group relative flex items-start gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl transition-colors ${
+      className={`group relative flex items-start gap-3 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800/40 rounded-xl transition-colors ${
         isDeleted ? 'opacity-60' : ''
       }`}
     >
-      {/* User Avatar */}
-      <img
-        src={message.author?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${message.user_id}`}
-        alt="Author Avatar"
-        className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-700 flex-shrink-0 mt-0.5 object-cover"
-      />
+      {/* User Avatar - Clickable */}
+      <button
+        type="button"
+        onClick={() => message.author && onOpenUserProfile(message.author)}
+        className="flex-shrink-0 mt-0.5"
+      >
+        <img
+          src={message.author?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${message.user_id}`}
+          alt="Author Avatar"
+          className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-700 object-cover hover:ring-2 hover:ring-indigo-500 transition-all"
+        />
+      </button>
 
       {/* Message Content Area */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
+          <button
+            type="button"
+            onClick={() => message.author && onOpenUserProfile(message.author)}
+            className="text-xs font-bold text-gray-900 dark:text-gray-100 hover:underline hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
             {message.author?.display_name || 'Member'}
-          </span>
+          </button>
           <span className="text-[10px] text-gray-400">
             {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
 
-        {/* Text Payload */}
+        {/* Text Content */}
         <div className={`text-sm leading-relaxed ${isDeleted ? 'italic text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
           {message.content}
         </div>
 
-        {/* Reaction Pills Container */}
+        {/* Reactions List */}
         {message.reactions && message.reactions.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {message.reactions.map((group, idx) => (
@@ -76,7 +86,7 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
           </div>
         )}
 
-        {/* Thread reply counter button */}
+        {/* Thread replies button */}
         {message.reply_count > 0 && (
           <button
             onClick={() => onOpenThread(message)}
@@ -91,7 +101,6 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
       {/* Hover Action Toolbar */}
       {!isDeleted && (
         <div className="absolute right-4 top-2 hidden group-hover:flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md px-1 py-0.5 z-10">
-          {/* Reaction Trigger */}
           <div className="relative">
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -101,7 +110,6 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
               <Smile className="w-4 h-4" />
             </button>
 
-            {/* Emoji Picker Popover */}
             <AnimatePresence>
               {showEmojiPicker && (
                 <motion.div
@@ -121,7 +129,6 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
             </AnimatePresence>
           </div>
 
-          {/* Reply in Thread Button */}
           <button
             onClick={() => onOpenThread(message)}
             className="p-1.5 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
@@ -130,7 +137,6 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
             <MessageSquare className="w-4 h-4" />
           </button>
 
-          {/* Delete Message Button (If own message) */}
           {isOwn && (
             <button
               onClick={() => onDelete(message.id)}

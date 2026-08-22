@@ -178,6 +178,115 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
     }
   }, [user?.id]);
 
+  // ── Empty State: no channel or DM selected ──────────────────────────────────
+  if (!activeChannel && !activeDmUser) {
+    return (
+      <div className={`flex-1 flex flex-col items-center justify-center h-full relative overflow-hidden transition-colors duration-500 ${
+        theme === 'dark'
+          ? 'bg-slate-950 text-white'
+          : 'bg-slate-100 text-slate-800'
+      }`}>
+        {/* Background gradient orbs */}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/10 to-pink-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-bl from-purple-500/15 via-indigo-500/10 to-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+        {/* Slow-spinning outer ring */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+          className="absolute w-72 h-72 rounded-full border border-dashed border-indigo-500/20 pointer-events-none"
+        />
+        {/* Faster spinning mid ring */}
+        <motion.div
+          animate={{ rotate: -360 }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+          className="absolute w-52 h-52 rounded-full border border-dashed border-purple-500/25 pointer-events-none"
+        />
+        {/* Pulsing glow dot top */}
+        <motion.div
+          animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-[calc(50%-7rem)] left-[calc(50%+7rem)] w-2 h-2 rounded-full bg-indigo-500 pointer-events-none"
+        />
+        {/* Pulsing glow dot bottom */}
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+          className="absolute top-[calc(50%+6rem)] left-[calc(50%-8rem)] w-2.5 h-2.5 rounded-full bg-purple-500 pointer-events-none"
+        />
+
+        {/* Central inbox icon */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 flex flex-col items-center gap-6 text-center px-8"
+        >
+          {/* Glowing icon container */}
+          <div className="relative">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30">
+              <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            {/* Spinning ring around icon */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+              className="absolute -inset-3 rounded-[2rem] border-2 border-dashed border-indigo-400/40 pointer-events-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-2xl font-black tracking-tight"
+            >
+              Your Inbox Awaits
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className={`text-sm font-medium max-w-xs leading-relaxed ${
+                theme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Pick a channel from the sidebar to start chatting, or select a teammate to send a private message.
+            </motion.p>
+          </div>
+
+          {/* Animated feature pills */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap items-center justify-center gap-2"
+          >
+            {['#general', '#engineering', '#blockchain', '💬 DMs'].map((label, i) => (
+              <motion.span
+                key={label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 + i * 0.1 }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border ${
+                  theme === 'dark'
+                    ? 'bg-slate-900 border-slate-800 text-slate-400'
+                    : 'bg-white border-slate-200 text-slate-500 shadow-sm'
+                }`}
+              >
+                {label}
+              </motion.span>
+            ))}
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slack-darkBg relative overflow-hidden transition-colors duration-300">
 

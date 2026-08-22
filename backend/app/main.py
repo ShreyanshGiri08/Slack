@@ -6,13 +6,22 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.core.config import settings
-from app.core.database import engine, Base, run_auto_migrations
+from app.core.database import engine, Base, get_db, run_auto_migrations
 from app.routers import users, channels, messages, reactions
 from app.websocket import ws_router
+from app.services.channel_service import seed_default_channels
 
 # Run schema migrations before anything else
 run_auto_migrations()
 Base.metadata.create_all(bind=engine)
+
+# Seed default channels
+from app.core.database import SessionLocal as _SessionLocal
+_db = _SessionLocal()
+try:
+    seed_default_channels(_db)
+finally:
+    _db.close()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

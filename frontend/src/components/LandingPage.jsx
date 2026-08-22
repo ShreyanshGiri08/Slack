@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
-import { Sparkles, MessageSquare, Hash, Zap, Smile, ArrowRight, Sun, Moon, Users, RefreshCw, Layers, ShieldCheck, Box } from 'lucide-react';
+import { Sparkles, MessageSquare, Hash, Zap, Smile, ArrowRight, Sun, Moon, Users, RefreshCw, Eye, EyeOff, ShieldCheck, Lock, Globe, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AVATAR_OPTIONS = [
@@ -19,8 +19,10 @@ export const LandingPage = () => {
   const [authMode, setAuthMode] = useState('login');
   const [activeTab, setActiveTab] = useState(0);
 
+  // Form State
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('Software Engineer & Team Collaborator');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_OPTIONS[0]);
@@ -60,7 +62,7 @@ export const LandingPage = () => {
         localStorage.setItem('mini_slack_user', JSON.stringify(res.data));
       }
     } catch (err) {
-      setErrorMsg(err.response?.data?.detail || 'Authentication failed. Please check credentials.');
+      setErrorMsg(err.response?.data?.detail || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -70,9 +72,9 @@ export const LandingPage = () => {
     {
       title: "Real-time Channels & Threads",
       desc: "Organize discussions into fixed channels like #general, #engineering, #random, and launch threaded replies to keep discussions contextually focused.",
-      icon: <Hash className="w-5 h-5 text-indigo-500" />,
+      icon: <Hash className="w-6 h-6 text-indigo-500" />,
       content: (
-        <div className="space-y-3 p-4 bg-slate-900/90 dark:bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs shadow-xl">
+        <div className="space-y-3 p-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs shadow-xl">
           <div className="flex items-center gap-2">
             <span className="font-bold text-indigo-400">#engineering</span>
             <span className="text-slate-400">Today at 10:15 AM</span>
@@ -87,7 +89,7 @@ export const LandingPage = () => {
     {
       title: "Emoji Reactions & Popovers",
       desc: "Express feedback instantly with full emoji picker integration and aggregated reaction counters.",
-      icon: <Smile className="w-5 h-5 text-purple-500" />,
+      icon: <Smile className="w-6 h-6 text-purple-500" />,
       content: (
         <div className="p-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs space-y-3 shadow-xl">
           <p className="text-slate-200">Should we ship v2.0 feature specs to staging tonight?</p>
@@ -102,7 +104,7 @@ export const LandingPage = () => {
     {
       title: "Isolated Private Direct Messages",
       desc: "Chat 1-on-1 privately with team members without leaking into public channels.",
-      icon: <Users className="w-5 h-5 text-pink-500" />,
+      icon: <Users className="w-6 h-6 text-pink-500" />,
       content: (
         <div className="p-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs space-y-2 shadow-xl">
           <div className="flex items-center gap-3">
@@ -121,14 +123,58 @@ export const LandingPage = () => {
     <div className={`min-h-screen w-full transition-colors duration-500 flex flex-col relative overflow-x-hidden ${
       theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-800'
     }`}>
-      {/* 3D Animated Floating Orbs */}
-      <motion.div
-        animate={{ scale: [1, 1.15, 1], rotate: [0, 180, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-[-80px] left-[20%] w-[550px] h-[550px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/15 to-pink-500/10 rounded-full blur-[130px] pointer-events-none"
-      />
+      {/* Dynamic Marquee Pill Banner */}
+      <div className="w-full bg-slate-900/90 dark:bg-slate-950/90 border-b border-indigo-500/20 text-indigo-400 text-xs font-bold py-2 overflow-hidden z-30 shadow-sm">
+        <div className="animate-marquee whitespace-nowrap flex gap-12 justify-around">
+          <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-amber-400" /> REAL-TIME WEBSOCKET ENGINE</span>
+          <span>•</span>
+          <span className="flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5 text-indigo-400" /> THREADED MESSAGE REPLIES</span>
+          <span>•</span>
+          <span className="flex items-center gap-2"><Smile className="w-3.5 h-3.5 text-pink-400" /> EMOJI REACTION POPOVERS</span>
+          <span>•</span>
+          <span className="flex items-center gap-2"><Lock className="w-3.5 h-3.5 text-emerald-400" /> ISOLATED PRIVATE DIRECT MESSAGES</span>
+          <span>•</span>
+          <span className="flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-purple-400" /> NEON POSTGRES PERSISTENCE</span>
+        </div>
+      </div>
 
-      {/* Header */}
+      {/* Floating Animated Technology Icons */}
+      <motion.div
+        animate={{ y: [-15, 15, -15], rotate: [0, 10, -10, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-28 left-[8%] text-indigo-500/30 dark:text-indigo-400/20 pointer-events-none z-0"
+      >
+        <Hash className="w-16 h-16" />
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [15, -15, 15], rotate: [0, -12, 12, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-40 right-[10%] text-purple-500/30 dark:text-purple-400/20 pointer-events-none z-0"
+      >
+        <Zap className="w-16 h-16" />
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [-20, 20, -20], scale: [1, 1.1, 1] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-32 left-[12%] text-pink-500/30 dark:text-pink-400/20 pointer-events-none z-0"
+      >
+        <Smile className="w-16 h-16" />
+      </motion.div>
+
+      <motion.div
+        animate={{ y: [20, -20, 20], rotate: [0, 15, -15, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-40 right-[12%] text-indigo-500/30 dark:text-indigo-400/20 pointer-events-none z-0"
+      >
+        <MessageSquare className="w-16 h-16" />
+      </motion.div>
+
+      {/* Background Gradient Orbs */}
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/15 to-pink-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+      {/* Navigation Header */}
       <header className={`h-20 px-8 flex items-center justify-between z-20 border-b backdrop-blur-md transition-colors ${
         theme === 'dark' ? 'border-slate-800/80 bg-slate-950/80' : 'border-slate-200/80 bg-white/80'
       }`}>
@@ -171,55 +217,57 @@ export const LandingPage = () => {
       </header>
 
       {/* Hero Body */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center z-10 max-w-6xl mx-auto w-full">
-        {/* 3D Rotating Badge */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center z-10 max-w-6xl mx-auto w-full relative">
         <motion.div
-          animate={{ rotateY: [0, 360] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold shadow-sm mb-6"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="space-y-6 max-w-5xl"
         >
-          <Box className="w-4 h-4 text-indigo-500 animate-spin" /> Next-Gen Engineering Collaboration Workspace
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold shadow-sm">
+            <Sparkles className="w-4 h-4 text-indigo-500" /> Next-Gen Team Collaboration Platform
+          </div>
+
+          <h1 className="text-6xl md:text-8xl font-black tracking-tight leading-none">
+            Real-Time Messaging <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">
+              Built For Speed.
+            </span>
+          </h1>
+
+          <p className={`max-w-3xl mx-auto text-lg md:text-xl font-medium leading-relaxed ${
+            theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+          }`}>
+            Organize work into channels, launch threaded replies, send isolated private DMs, react with emojis, and customize your profile with personal bios & avatars.
+          </p>
+
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
+              className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 group transition-all"
+            >
+              <span>Get Started Free</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={() => { setAuthMode('login'); setShowAuthModal(true); }}
+              className={`w-full sm:w-auto px-10 py-4 rounded-2xl border font-bold text-base transition-colors ${
+                theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm'
+              }`}
+            >
+              Log In to Workspace
+            </button>
+          </div>
         </motion.div>
 
-        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-tight max-w-4xl">
-          Real-Time Team Chat <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">
-            Engineered for Precision.
-          </span>
-        </h1>
-
-        <p className={`max-w-2xl mx-auto text-base md:text-lg leading-relaxed mt-4 ${
-          theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
-        }`}>
-          Switch topic channels, launch threaded replies, send isolated private DMs, react with emojis, and customize your profile with custom bios & avatars.
-        </p>
-
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
-            onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-base shadow-xl shadow-indigo-600/25 flex items-center justify-center gap-2 group transition-all"
-          >
-            <span>Get Started Free</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button
-            onClick={() => { setAuthMode('login'); setShowAuthModal(true); }}
-            className={`w-full sm:w-auto px-8 py-4 rounded-2xl border font-bold text-base transition-colors ${
-              theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 shadow-sm'
-            }`}
-          >
-            Log In to Workspace
-          </button>
-        </div>
-
-        {/* 3D Tilted Feature Showcase Card */}
-        <div className="mt-16 w-full max-w-4xl">
+        {/* 3D Interactive Feature Showcase */}
+        <div className="mt-16 w-full max-w-4xl z-10">
           <div className="flex justify-center gap-2 mb-6 flex-wrap">
             {featureSlides.map((slide, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveTab(idx)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                className={`px-6 py-3 rounded-xl text-xs font-bold transition-all flex items-center gap-2.5 ${
                   activeTab === idx
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-105'
                     : theme === 'dark'
@@ -236,10 +284,10 @@ export const LandingPage = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, scale: 0.98, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: -10 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, scale: 0.96, rotateX: 10 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.96, rotateX: -10 }}
+              transition={{ duration: 0.4 }}
               className={`p-8 rounded-3xl border shadow-2xl text-left ${
                 theme === 'dark' ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800 shadow-xl'
               }`}
@@ -260,7 +308,7 @@ export const LandingPage = () => {
         </div>
       </main>
 
-      {/* Auth Modal */}
+      {/* Auth Modal with Password Toggle */}
       <AnimatePresence>
         {showAuthModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
@@ -276,7 +324,7 @@ export const LandingPage = () => {
                 <button
                   type="button"
                   onClick={() => { setAuthMode('login'); setErrorMsg(''); }}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     authMode === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
@@ -285,7 +333,7 @@ export const LandingPage = () => {
                 <button
                   type="button"
                   onClick={() => { setAuthMode('signup'); setErrorMsg(''); }}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     authMode === 'signup' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
@@ -305,12 +353,12 @@ export const LandingPage = () => {
                     <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
                       Choose Your Avatar
                     </label>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-3 mb-2">
                       <img src={selectedAvatar} alt="Avatar" className="w-12 h-12 rounded-xl bg-slate-800 object-cover ring-2 ring-indigo-500 shadow-md" />
                       <button
                         type="button"
                         onClick={handleRandomizeAvatar}
-                        className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-colors"
+                        className="p-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white transition-colors"
                         title="Randomize Avatar"
                       >
                         <RefreshCw className="w-4 h-4" />
@@ -347,14 +395,24 @@ export const LandingPage = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 pr-10 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {authMode === 'signup' && (

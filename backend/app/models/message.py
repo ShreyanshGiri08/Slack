@@ -36,9 +36,9 @@ class Message(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
+    # ✅ FIX: Explicitly declare foreign_keys on both sides to avoid SQLAlchemy FK ambiguity
     author = relationship("User", foreign_keys=[user_id], back_populates="messages")
-    recipient = relationship("User", foreign_keys=[recipient_id])
+    recipient = relationship("User", foreign_keys=[recipient_id], overlaps="messages")
     channel = relationship("Channel", back_populates="messages")
     parent = relationship("Message", remote_side=[id], back_populates="replies")
     replies = relationship("Message", back_populates="parent", cascade="all, delete-orphan")

@@ -1,12 +1,5 @@
 """
 User ORM Model Module.
-
-WHAT THIS MODULE DOES:
-Defines the `User` database table structure using SQLAlchemy ORM, including personal bio and password fields.
-
-WHY IT'S STRUCTURED THIS WAY:
-1. `bio` field enables rich user profiles.
-2. `password` field supports credential authentication for registration and login.
 """
 
 import uuid
@@ -18,24 +11,25 @@ from app.core.database import Base
 
 
 class User(Base):
-    """
-    User Table Entity.
-
-    Represents a workspace member in Mini Slack with profile identity and status details.
-    """
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = Column(String(50), unique=True, nullable=False, index=True)
     display_name = Column(String(100), nullable=False)
-    avatar_url = Column(Text, nullable=False)
+    avatar_url = Column(Text, nullable=True, default="https://api.dicebear.com/7.x/bottts/svg?seed=default")
     status = Column(String(100), default="Online")
-    bio = Column(Text, default="Software Engineer & Team Collaborator")
+    bio = Column(Text, default="Team Member")
     password = Column(String(255), default="password123")
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
-    # Relationships
-    messages = relationship("Message", back_populates="author", cascade="all, delete-orphan")
+    # ✅ FIX: Explicitly declare foreign_keys to resolve ambiguous multi-FK path
+    # Message has BOTH user_id and recipient_id pointing to users.id
+    messages = relationship(
+        "Message",
+        foreign_keys="[Message.user_id]",
+        back_populates="author",
+        cascade="all, delete-orphan"
+    )
     reactions = relationship("Reaction", back_populates="user", cascade="all, delete-orphan")
     message_reads = relationship("MessageRead", back_populates="user", cascade="all, delete-orphan")
 

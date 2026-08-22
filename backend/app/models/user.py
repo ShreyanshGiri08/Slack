@@ -2,12 +2,11 @@
 User ORM Model Module.
 
 WHAT THIS MODULE DOES:
-Defines the `User` database table structure using SQLAlchemy ORM.
+Defines the `User` database table structure using SQLAlchemy ORM, including personal bio and password fields.
 
 WHY IT'S STRUCTURED THIS WAY:
-1. UUID primary key ensures globally unique identifiers across distributed systems.
-2. `avatar_url` defaults to automated avatar generation via DiceBear API.
-3. Relationships cleanly map messages, reactions, and unread states created by this user.
+1. `bio` field enables rich user profiles.
+2. `password` field supports credential authentication for registration and login.
 """
 
 import uuid
@@ -22,8 +21,7 @@ class User(Base):
     """
     User Table Entity.
 
-    Represents a workspace member in Mini Slack. Stores identity, display attributes,
-    and online presence status.
+    Represents a workspace member in Mini Slack with profile identity and status details.
     """
     __tablename__ = "users"
 
@@ -32,6 +30,8 @@ class User(Base):
     display_name = Column(String(100), nullable=False)
     avatar_url = Column(Text, nullable=False)
     status = Column(String(100), default="Online")
+    bio = Column(Text, default="Software Engineer & Team Collaborator")
+    password = Column(String(255), default="password123")
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
     # Relationships

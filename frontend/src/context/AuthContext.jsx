@@ -81,6 +81,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Opt 2: Send SUBSCRIBE when user switches channels so backend routes targeted
+  useEffect(() => {
+    if (!socket || socket.readyState !== WebSocket.OPEN || !activeChannel) return;
+    socket.send(JSON.stringify({
+      type: 'SUBSCRIBE',
+      channel_id: activeChannel.id
+    }));
+  }, [socket, activeChannel?.id]);
+
   useEffect(() => {
     refreshChannels();
   }, [user?.id]);

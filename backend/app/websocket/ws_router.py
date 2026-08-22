@@ -2,7 +2,8 @@
 WebSocket Router Module.
 
 WHAT THIS MODULE DOES:
-Handles `/ws/workspace/{user_id}` upgrades and routes incoming socket messages (e.g. typing events).
+Handles `/ws/workspace/{user_id}` upgrades, client SUBSCRIBE/UNSUBSCRIBE messages,
+and routes typing events. Channel subscription tracking enables targeted delivery.
 """
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -16,9 +17,11 @@ router = APIRouter(tags=["WebSocket"])
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     """
     WebSocket Connection Endpoint.
-    
-    Path: /ws/workspace/{user_id}
-    Purpose: Establish real-time persistent bi-directional connection for live updates.
+
+    Client messages supported:
+      { "type": "SUBSCRIBE",   "channel_id": "..." }  — join channel room
+      { "type": "UNSUBSCRIBE", "channel_id": "..." }  — leave channel room
+      { "type": "TYPING",      "channel_id": "...", "username": "...", "is_typing": true }
     """
     await manager.connect(user_id, websocket)
     try:
@@ -26,13 +29,30 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
             data_str = await websocket.receive_text()
             try:
                 data = json.loads(data_str)
-                # Handle client incoming socket commands (e.g., typing indicators)
-                if data.get("type") == "TYPING":
-                    await manager.broadcast(
+                msg_type = data.get("type")
+
+                if msg_type == "SUBSCRIBE":
+                    # Opt 2: Register user into channel room for targeted delivery
+                    channel_id = data.get("channel_id")
+                    if channel_id:
+                        manager.subscribe_to_channel(user_id, channel_id)
+
+                elif msg_type == "UNSUBSCRIBE":
+                    channel_id = data.get("channel_id")
+                    if channel_id:
+                        manager.unsubscribe_from_channel(user_id, channel_id)
+
+                elif msg_type == "TYPING":
+                    await manager.broadcast_to_channel(
                         event_type="TYPING_INDICATOR",
-                        channel_id=data.get("channel_id"),
-                        data={"user_id": user_id, "username": data.get("username"), "is_typing": data.get("is_typing", True)}
+                        channel_id=data.get("channel_id", ""),
+                        data={
+                            "user_id": user_id,
+                            "username": data.get("username"),
+                            "is_typing": data.get("is_typing", True)
+                        }
                     )
+
             except Exception:
                 pass
     except WebSocketDisconnect:

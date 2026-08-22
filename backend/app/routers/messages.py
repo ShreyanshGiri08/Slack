@@ -47,15 +47,26 @@ async def post_message(
     """POST /api/v1/channels/{channel_id}/messages — Post a channel message, thread reply, or private DM."""
     msg = message_service.create_message(db, channel_id, x_user_id, message_in)
     hydrated = message_service.hydrate_message_response(db, msg, current_user_id=x_user_id)
-    
     response_data = MessageResponse.model_validate(hydrated).model_dump(mode="json")
-    
-    await manager.broadcast(
-        event_type="NEW_MESSAGE",
-        channel_id=str(channel_id),
-        data=response_data
-    )
-    
+
+    # Opt 2: Route to channel subscribers OR DM pair — not all users
+    if message_in.recipient_id:
+        # Private DM: deliver only to sender + recipient — O(2)
+        await manager.broadcast_to_dm_pair(
+            event_type="NEW_MESSAGE",
+            sender_id=x_user_id,
+            recipient_id=str(message_in.recipient_id),
+            data=response_data,
+            channel_id=str(channel_id)
+        )
+    else:
+        # Public channel: deliver only to channel subscribers — O(subscribers)
+        await manager.broadcast_to_channel(
+            event_type="NEW_MESSAGE",
+            channel_id=str(channel_id),
+            data=response_data
+        )
+
     return response_data
 
 
@@ -80,8 +91,9 @@ async def delete_message(
         msg = message_service.soft_delete_message(db, message_id, x_user_id)
         if not msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
-        
-        await manager.broadcast(
+
+        # Soft delete: broadcast to channel subscribers only
+        await manager.broadcast_to_channel(
             event_type="MESSAGE_DELETED",
             channel_id=str(msg.channel_id),
             data={"message_id": str(message_id), "channel_id": str(msg.channel_id)}

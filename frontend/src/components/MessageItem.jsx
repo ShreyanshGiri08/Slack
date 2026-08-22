@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MessageSquare, Trash2, Smile } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, onRemoveReaction, onOpenUserProfile }) => {
+// Opt 4: React.memo — MessageItem only re-renders when its message prop changes.
+// Without this, every new incoming WebSocket message would re-render ALL visible messages.
+export const MessageItem = memo(({ message, onDelete, onOpenThread, onAddReaction, onRemoveReaction, onOpenUserProfile }) => {
   const { user, theme } = useAuth();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const pickerRef = useRef(null);
@@ -174,4 +176,7 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
       )}
     </motion.div>
   );
-};
+});
+
+// Display name for React DevTools
+MessageItem.displayName = 'MessageItem';

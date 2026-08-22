@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MessageItem } from './MessageItem';
 import { apiClient } from '../api/client';
@@ -145,7 +145,8 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
+  // Opt 4: useCallback — stable references so React.memo on MessageItem skips re-renders
+  const handleDeleteMessage = useCallback(async (messageId) => {
     try {
       await apiClient.delete(`/messages/${messageId}`, {
         headers: { 'X-User-Id': user.id }
@@ -153,9 +154,9 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
     } catch (err) {
       console.error('Failed to delete message:', err);
     }
-  };
+  }, [user?.id]);
 
-  const handleAddReaction = async (messageId, emoji) => {
+  const handleAddReaction = useCallback(async (messageId, emoji) => {
     try {
       await apiClient.post(
         `/messages/${messageId}/reactions`,
@@ -165,9 +166,9 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
     } catch (err) {
       console.error('Failed to add reaction:', err);
     }
-  };
+  }, [user?.id]);
 
-  const handleRemoveReaction = async (messageId, emoji) => {
+  const handleRemoveReaction = useCallback(async (messageId, emoji) => {
     try {
       await apiClient.delete(`/messages/${messageId}/reactions/${emoji}`, {
         headers: { 'X-User-Id': user.id }
@@ -175,7 +176,7 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
     } catch (err) {
       console.error('Failed to remove reaction:', err);
     }
-  };
+  }, [user?.id]);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slack-darkBg relative overflow-hidden transition-colors duration-300">

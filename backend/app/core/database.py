@@ -1,22 +1,18 @@
 """
-Database Connection & Session Management Module.
+Database Connection & Auto-Migration Management Module.
 
 WHAT THIS MODULE DOES:
-Configures the SQLAlchemy ORM engine, creates the session factory, and provides
-a FastAPI dependency (`get_db`) for clean per-request database transaction lifecycles.
+Configures SQLAlchemy engine, session generator, and performs auto-healing schema migrations on startup (e.g. adding missing `bio`, `password`, or `recipient_id` columns if not present in Neon Postgres).
 
 WHY IT'S STRUCTURED THIS WAY:
-1. Isolating DB configuration keeps database logic decoupled from API routing.
-2. The `get_db` generator pattern guarantees that database connections are automatically
-   closed after each request context completes, preventing database connection leaks.
+1. Prevents database query crashes if new columns were added to models after initial table creation.
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-# Create SQLAlchemy Database Engine
-# pool_pre_ping=True checks connection validity before executing queries (essential for Neon serverless Postgres)
+# Create SQLAlchemy Engine
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
@@ -24,23 +20,30 @@ engine = create_engine(
     max_overflow=20
 )
 
-# Create SessionLocal class for instantiating DB sessions per request
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Declarative Base for ORM model class inheritance
 Base = declarative_base()
 
 
-def get_db():
+def run_auto_migrations():
     """
-    FastAPI Dependency that yields a database session for a single HTTP request context.
+    Executes safe DDL column additions on Neon PostgreSQL on application startup.
 
     WHAT IT DOES:
-    Instantiates a new database session, yields it to the route handler, and closes it when finished.
-
-    WHY IT IS NEEDED:
-    Ensures transactional safety and connection pool cleanup per HTTP request.
+    Checks and adds `bio`, `password` to `users` table and `recipient_id` to `messages` table if missing.
     """
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT 'Software Engineer & Team Collaborator';"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'password123';"))
+            conn.execute(text("ALTER TABLE messages ADD COLUMN IF NOT EXISTS recipient_id UUID REFERENCES users(id) ON DELETE CASCADE;"))
+            conn.commit()
+            print("Auto database migrations executed successfully.")
+        except Exception as e:
+            print(f"Auto migration notice: {e}")
+
+
+def get_db():
+    """FastAPI Dependency yielding a per-request database session."""
     db = SessionLocal()
     try:
         yield db

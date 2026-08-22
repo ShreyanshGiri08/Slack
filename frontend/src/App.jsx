@@ -9,6 +9,7 @@ import { UserProfileModal } from './components/UserProfileModal';
 
 function WorkspaceLayout() {
   const { user } = useAuth();
+  const [showWorkspace, setShowWorkspace] = useState(false);
   const [activeThreadMessage, setActiveThreadMessage] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -16,8 +17,13 @@ function WorkspaceLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeDmUser, setActiveDmUser] = useState(null);
 
-  if (!user) {
-    return <LandingPage />;
+  // When user logs out, reset workspace view
+  React.useEffect(() => {
+    if (!user) setShowWorkspace(false);
+  }, [user]);
+
+  if (!user || !showWorkspace) {
+    return <LandingPage onEnterWorkspace={() => setShowWorkspace(true)} />;
   }
 
   const handleOpenUserProfile = (userToView) => {

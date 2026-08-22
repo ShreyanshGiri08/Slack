@@ -1,0 +1,17 @@
+# Python bytecode & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Node dependencies & build artifacts
+node_modules/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.ds_store

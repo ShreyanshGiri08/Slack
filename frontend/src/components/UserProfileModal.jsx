@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
-import { X, RefreshCw, Check, Sparkles, User, Mail } from 'lucide-react';
+import { X, RefreshCw, Check, Sparkles, User, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const UserProfileModal = ({ isOpen, onClose }) => {
   const { user, setUser } = useAuth();
   const [displayName, setDisplayName] = useState(user?.display_name || '');
   const [statusText, setStatusText] = useState(user?.status || '');
+  const [bioText, setBioText] = useState(user?.bio || 'Software Engineer & Team Collaborator');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
   const [saving, setSaving] = useState(false);
 
@@ -26,6 +27,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       const res = await apiClient.patch(`/users/${user.id}`, {
         display_name: displayName,
         status: statusText,
+        bio: bioText,
         avatar_url: avatarUrl
       });
       setUser(res.data);
@@ -45,9 +47,9 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden"
+          className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden"
         >
-          {/* Modal Header */}
+          {/* Header Banner */}
           <div className="relative h-28 bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-end justify-between p-4">
             <button
               onClick={onClose}
@@ -57,7 +59,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          {/* Profile Card Info */}
+          {/* Profile Card Form */}
           <div className="px-6 pb-6 relative">
             <div className="flex justify-between items-end -mt-12 mb-4">
               <div className="relative">
@@ -99,6 +101,19 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   value={statusText}
                   onChange={(e) => setStatusText(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl text-sm bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
+                  Personal Bio
+                </label>
+                <textarea
+                  rows={3}
+                  value={bioText}
+                  onChange={(e) => setBioText(e.target.value)}
+                  placeholder="Share a short bio with your team..."
+                  className="w-full px-3.5 py-2 rounded-xl text-sm bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 />
               </div>
 

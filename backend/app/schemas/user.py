@@ -1,12 +1,5 @@
 """
 User Pydantic Schemas Module.
-
-WHAT THIS MODULE DOES:
-Defines input validation schemas for Login, Signup, Profile Updates, and User Responses.
-
-WHY IT'S STRUCTURED THIS WAY:
-1. `UserSignup`: Validates credentials (username, password, display name) during registration.
-2. `UserResponse`: Includes `bio` so user profile cards display personal bios.
 """
 
 from uuid import UUID
@@ -17,10 +10,10 @@ from pydantic import BaseModel, Field
 
 class UserSignup(BaseModel):
     """Payload for registering a new user account."""
-    username: str = Field(..., min_length=2, max_length=50, description="Unique username handle")
-    display_name: str = Field(..., min_length=2, max_length=100, description="Full display name")
-    password: str = Field(..., min_length=4, max_length=100, description="Account password")
-    bio: Optional[str] = Field("Software Engineer & Team Collaborator", max_length=500)
+    username: str = Field(..., min_length=2, max_length=50)
+    display_name: str = Field(..., min_length=2, max_length=100)
+    password: str = Field(..., min_length=4, max_length=100)
+    bio: Optional[str] = Field("Team Member", max_length=500)
 
 
 class UserLogin(BaseModel):
@@ -42,9 +35,10 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     display_name: str
-    avatar_url: str
-    status: str
-    bio: Optional[str] = "Software Engineer & Team Collaborator"
+    # ✅ FIX: avatar_url is Optional so that legacy DB rows without it don't 500
+    avatar_url: Optional[str] = "https://api.dicebear.com/7.x/bottts/svg?seed=default"
+    status: Optional[str] = "Online"
+    bio: Optional[str] = "Team Member"
     created_at: datetime
 
     class Config:

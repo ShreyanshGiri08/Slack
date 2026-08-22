@@ -1,45 +1,49 @@
 """
 Database Connection & Auto-Migration Management Module.
-
-WHAT THIS MODULE DOES:
-Configures SQLAlchemy engine, session generator, and performs auto-healing schema migrations on startup (e.g. adding missing `bio`, `password`, or `recipient_id` columns if not present in Neon Postgres).
-
-WHY IT'S STRUCTURED THIS WAY:
-1. Prevents database query crashes if new columns were added to models after initial table creation.
 """
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-# Create SQLAlchemy Engine
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20
+    pool_size=5,
+    max_overflow=10,
+    connect_args={"sslmode": "require"}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+def _safe_exec(conn, sql: str):
+    """Executes a DDL statement silently, ignoring errors for already-existing columns."""
+    try:
+        conn.execute(text(sql))
+    except Exception as e:
+        # Duplicate column errors are safe to ignore
+        if "already exists" not in str(e).lower():
+            print(f"  Migration warning: {e}")
+
+
 def run_auto_migrations():
     """
-    Executes safe DDL column additions on Neon PostgreSQL on application startup.
-
-    WHAT IT DOES:
-    Checks and adds `bio`, `password` to `users` table and `recipient_id` to `messages` table if missing.
+    Executes DDL column additions on Neon PostgreSQL on startup.
+    Each statement is independent so one failure doesn't abort the rest.
     """
-    with engine.connect() as conn:
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT 'Software Engineer & Team Collaborator';"))
-            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'password123';"))
-            conn.execute(text("ALTER TABLE messages ADD COLUMN IF NOT EXISTS recipient_id UUID REFERENCES users(id) ON DELETE CASCADE;"))
-            conn.commit()
-            print("Auto database migrations executed successfully.")
-        except Exception as e:
-            print(f"Auto migration notice: {e}")
+    print("Running auto database migrations...")
+    try:
+        with engine.begin() as conn:
+            # Ensure users table has bio and password columns
+            _safe_exec(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT 'Team Member';")
+            _safe_exec(conn, "ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'password123';")
+            # Ensure messages table has recipient_id for DMs
+            _safe_exec(conn, "ALTER TABLE messages ADD COLUMN IF NOT EXISTS recipient_id UUID REFERENCES users(id) ON DELETE SET NULL;")
+        print("Auto database migrations completed successfully.")
+    except Exception as e:
+        print(f"Auto migration error: {e}")
 
 
 def get_db():

@@ -1,13 +1,5 @@
 """
 User Business Logic Service Module.
-
-WHAT THIS MODULE DOES:
-Implements signup registration, password login authentication, profile bio updates, and DiceBear avatar generation.
-
-WHY IT'S STRUCTURED THIS WAY:
-1. `register_user`: Checks username uniqueness and assigns DiceBear avatar.
-2. `authenticate_user`: Verifies credentials for user login.
-3. `update_user_profile`: Handles bio and display name modifications.
 """
 
 from typing import List, Optional
@@ -19,43 +11,52 @@ from app.schemas.user import UserSignup, UserLogin, UserUpdate
 def register_user(db: Session, signup_data: UserSignup) -> User:
     """
     Registers a new workspace member account.
-
-    WHAT IT DOES:
-    Verifies username is unique, auto-generates DiceBear avatar URL, and creates a User row.
     """
-    existing = db.query(User).filter(User.username == signup_data.username).first()
-    if existing:
-        raise ValueError("Username is already taken")
+    try:
+        existing = db.query(User).filter(User.username == signup_data.username).first()
+        if existing:
+            raise ValueError("Username is already taken. Please choose another.")
 
-    avatar_url = f"https://api.dicebear.com/7.x/bottts/svg?seed={signup_data.username}"
-    
-    new_user = User(
-        username=signup_data.username,
-        display_name=signup_data.display_name,
-        password=signup_data.password,
-        bio=signup_data.bio or "Software Engineer & Team Collaborator",
-        avatar_url=avatar_url,
-        status="Online"
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+        avatar_url = f"https://api.dicebear.com/7.x/bottts/svg?seed={signup_data.username}"
+
+        new_user = User(
+            username=signup_data.username,
+            display_name=signup_data.display_name,
+            password=signup_data.password,
+            bio=signup_data.bio or "Team Member",
+            avatar_url=avatar_url,
+            status="Online"
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        print(f"[register_user] New user registered: {new_user.username} ({new_user.id})")
+        return new_user
+    except ValueError:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"[register_user] DB Error: {e}")
+        raise ValueError(f"Registration failed: {str(e)}")
 
 
 def authenticate_user(db: Session, login_data: UserLogin) -> User:
     """
     Authenticates an existing user by username and password.
-
-    WHAT IT DOES:
-    Queries user by username and validates password.
     """
-    user = db.query(User).filter(User.username == login_data.username).first()
-    if not user:
-        raise ValueError("Invalid username or password")
-    if user.password != login_data.password:
-        raise ValueError("Invalid username or password")
-    return user
+    try:
+        user = db.query(User).filter(User.username == login_data.username).first()
+        if not user:
+            raise ValueError("Invalid username or password")
+        if user.password != login_data.password:
+            raise ValueError("Invalid username or password")
+        print(f"[authenticate_user] User authenticated: {user.username}")
+        return user
+    except ValueError:
+        raise
+    except Exception as e:
+        print(f"[authenticate_user] DB Error: {e}")
+        raise ValueError(f"Login failed: {str(e)}")
 
 
 def get_user_by_id(db: Session, user_id) -> Optional[User]:

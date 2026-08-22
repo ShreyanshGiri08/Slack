@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
@@ -12,6 +12,7 @@ function WorkspaceLayout() {
   const [activeThreadMessage, setActiveThreadMessage] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [targetProfileUser, setTargetProfileUser] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeDmUser, setActiveDmUser] = useState(null);
 
@@ -19,12 +20,21 @@ function WorkspaceLayout() {
     return <LandingPage />;
   }
 
+  const handleOpenUserProfile = (userToView) => {
+    setTargetProfileUser(userToView);
+    setIsProfileOpen(true);
+  };
+
+  const handleStartDm = (targetUser) => {
+    setActiveDmUser(targetUser);
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-slack-darkBg text-gray-900 dark:text-gray-100">
       {/* Collapsible Sidebar */}
       <Sidebar
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenProfile={() => handleOpenUserProfile(user)}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         activeDmUser={activeDmUser}
@@ -35,6 +45,7 @@ function WorkspaceLayout() {
       <ChatArea
         activeDmUser={activeDmUser}
         onOpenThread={(msg) => setActiveThreadMessage(msg)}
+        onSelectUserForProfile={(profileUser) => handleOpenUserProfile(profileUser)}
       />
 
       {/* Sliding Thread Drawer */}
@@ -51,7 +62,12 @@ function WorkspaceLayout() {
 
       <UserProfileModal
         isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+        targetUser={targetProfileUser}
+        onClose={() => {
+          setIsProfileOpen(false);
+          setTargetProfileUser(null);
+        }}
+        onStartDm={handleStartDm}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MessageSquare, Trash2, Smile } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
@@ -7,9 +7,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, onRemoveReaction, onOpenUserProfile }) => {
   const { user, theme } = useAuth();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const pickerRef = useRef(null);
+  const buttonRef = useRef(null);
 
   const isOwn = user && message.user_id === user.id;
   const isDeleted = message.is_deleted;
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handler = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target) &&
+          buttonRef.current && !buttonRef.current.contains(e.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showEmojiPicker]);
 
   const handleEmojiClick = (emojiData) => {
     onAddReaction(message.id, emojiData.emoji);
@@ -62,25 +77,26 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
         </div>
 
         {/* Text Content */}
-        <div className={`text-sm leading-relaxed ${isDeleted ? 'italic text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
+        <div className={`text-sm leading-relaxed break-words ${isDeleted ? 'italic text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200'}`}>
           {message.content}
         </div>
 
-        {/* Reactions List */}
+        {/* Reactions List - Clearly Visible */}
         {message.reactions && message.reactions.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {message.reactions.map((group, idx) => (
               <button
                 key={idx}
                 onClick={() => handleToggleReaction(group)}
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border transition-all ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium border transition-all select-none ${
                   group.has_reacted
-                    ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-300 font-semibold'
-                    : 'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                    ? 'bg-indigo-100 dark:bg-indigo-900/60 border-indigo-400 dark:border-indigo-600 text-indigo-700 dark:text-indigo-200 font-bold'
+                    : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                <span>{group.emoji}</span>
-                <span className="text-[11px]">{group.count}</span>
+                {/* Emoji rendered at readable size */}
+                <span className="text-base leading-none">{group.emoji}</span>
+                <span className="text-xs font-bold">{group.count}</span>
               </button>
             ))}
           </div>
@@ -100,9 +116,10 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
 
       {/* Hover Action Toolbar */}
       {!isDeleted && (
-        <div className="absolute right-4 top-2 hidden group-hover:flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md px-1 py-0.5 z-10">
+        <div className="absolute right-4 top-2 hidden group-hover:flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg px-1 py-0.5 z-20">
           <div className="relative">
             <button
+              ref={buttonRef}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               className="p-1.5 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
               title="Add Reaction"
@@ -113,16 +130,23 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
             <AnimatePresence>
               {showEmojiPicker && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute right-0 bottom-8 z-50 shadow-2xl"
+                  ref={pickerRef}
+                  initial={{ opacity: 0, scale: 0.92, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: 8 }}
+                  transition={{ duration: 0.15 }}
+                  // Fixed z-index above everything so it's never clipped
+                  className="absolute right-0 bottom-10 z-[9999] shadow-2xl rounded-2xl overflow-hidden"
+                  style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.4))' }}
                 >
                   <EmojiPicker
                     theme={theme === 'dark' ? 'dark' : 'light'}
                     onEmojiClick={handleEmojiClick}
                     width={320}
-                    height={380}
+                    height={400}
+                    searchDisabled={false}
+                    skinTonesDisabled
+                    previewConfig={{ showPreview: false }}
                   />
                 </motion.div>
               )}

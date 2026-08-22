@@ -14,4 +14,7 @@ build/
 # Environment files
 .env
 .env.local
+backend/.env
+frontend/.env
+*.env
 .ds_store

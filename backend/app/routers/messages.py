@@ -2,8 +2,7 @@
 Messages API Router.
 
 WHAT THIS MODULE DOES:
-Exposes HTTP REST routes for fetching/posting channel messages, thread replies, soft-deleting messages, and text search.
-Triggers WebSocket broadcasts on creation or deletion.
+Exposes HTTP REST routes for channel streams, private 1-on-1 DMs, threads, soft-deletion, and search.
 """
 
 from typing import List, Optional
@@ -24,12 +23,18 @@ def list_messages(
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     db: Session = Depends(get_db)
 ):
-    """
-    GET /api/v1/channels/{channel_id}/messages
-    
-    Purpose: Retrieve non-threaded messages for a given channel stream.
-    """
+    """GET /api/v1/channels/{channel_id}/messages — Public channel message stream."""
     return message_service.get_channel_messages(db, channel_id, current_user_id=x_user_id)
+
+
+@router.get("/dms/{recipient_id}", response_model=List[MessageResponse])
+def list_direct_messages(
+    recipient_id: UUID,
+    x_user_id: str = Header(..., alias="X-User-Id"),
+    db: Session = Depends(get_db)
+):
+    """GET /api/v1/dms/{recipient_id} — Private 1-on-1 Direct Message conversation stream."""
+    return message_service.get_direct_messages(db, x_user_id, recipient_id)
 
 
 @router.post("/channels/{channel_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -39,18 +44,12 @@ async def post_message(
     x_user_id: str = Header(..., alias="X-User-Id"),
     db: Session = Depends(get_db)
 ):
-    """
-    POST /api/v1/channels/{channel_id}/messages
-    
-    Purpose: Post a new message or thread reply to a channel. Broadcasts NEW_MESSAGE event via WebSockets.
-    """
+    """POST /api/v1/channels/{channel_id}/messages — Post a channel message, thread reply, or private DM."""
     msg = message_service.create_message(db, channel_id, x_user_id, message_in)
     hydrated = message_service.hydrate_message_response(db, msg, current_user_id=x_user_id)
     
-    # Serialized JSON response
     response_data = MessageResponse.model_validate(hydrated).model_dump(mode="json")
     
-    # Broadcast to all connected WebSockets
     await manager.broadcast(
         event_type="NEW_MESSAGE",
         channel_id=str(channel_id),
@@ -66,11 +65,7 @@ def get_thread(
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
     db: Session = Depends(get_db)
 ):
-    """
-    GET /api/v1/messages/{message_id}/thread
-    
-    Purpose: Fetch parent message and all reply thread items.
-    """
+    """GET /api/v1/messages/{message_id}/thread — Fetch thread parent & replies."""
     return message_service.get_thread_messages(db, message_id, current_user_id=x_user_id)
 
 
@@ -80,11 +75,7 @@ async def delete_message(
     x_user_id: str = Header(..., alias="X-User-Id"),
     db: Session = Depends(get_db)
 ):
-    """
-    DELETE /api/v1/messages/{message_id}
-    
-    Purpose: Soft-delete own message. Broadcasts MESSAGE_DELETED event via WebSockets.
-    """
+    """DELETE /api/v1/messages/{message_id} — Soft-delete message."""
     try:
         msg = message_service.soft_delete_message(db, message_id, x_user_id)
         if not msg:
@@ -106,9 +97,5 @@ def search(
     channel_id: Optional[UUID] = None,
     db: Session = Depends(get_db)
 ):
-    """
-    GET /api/v1/messages/search?q=...&channel_id=...
-    
-    Purpose: Text search across non-deleted messages.
-    """
+    """GET /api/v1/messages/search?q=... — Text search."""
     return message_service.search_messages(db, query_text=q, channel_id=channel_id)

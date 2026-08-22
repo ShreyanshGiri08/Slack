@@ -2,33 +2,27 @@
 Message Business Logic Service Module.
 
 WHAT THIS MODULE DOES:
-Handles posting messages, fetching channel streams & threads, soft-deleting own messages, and cross-channel message search.
+Handles posting channel messages, isolated private Direct Messages (DMs), thread replies, soft-deletes, and search.
 
 WHY IT'S STRUCTURED THIS WAY:
-1. `create_message`: Handles both root channel messages and threaded replies (`parent_id`).
-2. `soft_delete_message`: Marks `is_deleted = True` and changes content to `[This message was deleted]` to preserve thread continuity without hard-deleting database records.
-3. `search_messages`: Case-insensitive `ILIKE` pattern match across non-deleted messages.
+1. `get_channel_messages`: Explicitly filters out DMs (`recipient_id IS NULL`) so private DMs never leak into public channels.
+2. `get_direct_messages`: Queries private messages exchanged between two specific workspace members.
 """
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from app.models.message import Message
 from app.models.channel import Channel
-from app.schemas.message import MessageCreate, MessageResponse, MessageSearchResponse
+from app.schemas.message import MessageCreate, MessageSearchResponse
 from app.schemas.user import UserResponse
 from app.services.reaction_service import get_message_reaction_groups
 
 
 def hydrate_message_response(db: Session, msg: Message, current_user_id=None) -> Dict[str, Any]:
-    """
-    Hydrates a Message ORM instance into a rich dictionary with author profile, reply count, and reaction pills.
-
-    WHAT IT DOES:
-    Calculates reply counts for root messages and groups emoji reactions.
-    """
+    """Hydrates Message ORM model into JSON dict with author/recipient profiles and reaction pills."""
     reply_count = 0
-    if msg.parent_id is None:
+    if msg.parent_id is None and msg.recipient_id is None:
         reply_count = db.query(func.count(Message.id)).filter(
             Message.parent_id == msg.id,
             Message.is_deleted == False
@@ -36,9 +30,8 @@ def hydrate_message_response(db: Session, msg: Message, current_user_id=None) ->
 
     reactions = get_message_reaction_groups(db, msg.id, current_user_id)
 
-    author_data = None
-    if msg.author:
-        author_data = UserResponse.model_validate(msg.author)
+    author_data = UserResponse.model_validate(msg.author) if msg.author else None
+    recipient_data = UserResponse.model_validate(msg.recipient) if msg.recipient else None
 
     content_text = "[This message was deleted]" if msg.is_deleted else msg.content
 
@@ -46,27 +39,25 @@ def hydrate_message_response(db: Session, msg: Message, current_user_id=None) ->
         "id": msg.id,
         "channel_id": msg.channel_id,
         "user_id": msg.user_id,
+        "recipient_id": msg.recipient_id,
         "parent_id": msg.parent_id,
         "content": content_text,
         "is_deleted": msg.is_deleted,
         "created_at": msg.created_at,
         "updated_at": msg.updated_at,
         "author": author_data,
+        "recipient": recipient_data,
         "reply_count": reply_count,
         "reactions": reactions
     }
 
 
 def create_message(db: Session, channel_id, user_id, message_in: MessageCreate) -> Message:
-    """
-    Posts a new message or threaded reply in a channel.
-
-    WHAT IT DOES:
-    Inserts a row into `messages`. If `parent_id` is provided, verifies parent message exists.
-    """
+    """Posts a message, thread reply, or isolated private DM."""
     msg = Message(
         channel_id=channel_id,
         user_id=user_id,
+        recipient_id=message_in.recipient_id,
         parent_id=message_in.parent_id,
         content=message_in.content,
         is_deleted=False
@@ -79,26 +70,35 @@ def create_message(db: Session, channel_id, user_id, message_in: MessageCreate) 
 
 def get_channel_messages(db: Session, channel_id, current_user_id=None, limit: int = 100) -> List[Dict[str, Any]]:
     """
-    Fetches non-threaded root channel messages ordered by creation time ascending.
-
-    WHAT IT DOES:
-    Queries `messages` where `channel_id = channel_id` and `parent_id IS NULL`.
+    Fetches non-threaded public channel messages.
+    IMPORTANT: Excludes private DMs (`recipient_id IS NULL`).
     """
     messages = db.query(Message).filter(
         Message.channel_id == channel_id,
-        Message.parent_id == None
+        Message.parent_id == None,
+        Message.recipient_id == None  # Exclude private DMs from public channels
     ).order_by(Message.created_at.asc()).limit(limit).all()
 
     return [hydrate_message_response(db, msg, current_user_id) for msg in messages]
 
 
-def get_thread_messages(db: Session, message_id, current_user_id=None) -> Dict[str, Any]:
+def get_direct_messages(db: Session, user1_id, user2_id, limit: int = 100) -> List[Dict[str, Any]]:
     """
-    Fetches parent message and all its threaded replies.
+    Fetches private 1-on-1 Direct Messages exchanged between user1 and user2.
+    """
+    messages = db.query(Message).filter(
+        Message.recipient_id != None,
+        or_(
+            and_(Message.user_id == user1_id, Message.recipient_id == user2_id),
+            and_(Message.user_id == user2_id, Message.recipient_id == user1_id)
+        )
+    ).order_by(Message.created_at.asc()).limit(limit).all()
 
-    WHAT IT DOES:
-    Queries parent message by `id` and all replies where `parent_id = message_id`.
-    """
+    return [hydrate_message_response(db, msg, current_user_id=user1_id) for msg in messages]
+
+
+def get_thread_messages(db: Session, message_id, current_user_id=None) -> Dict[str, Any]:
+    """Fetches parent message and all thread replies."""
     parent = db.query(Message).filter(Message.id == message_id).first()
     if not parent:
         return {"parent": None, "replies": []}
@@ -107,27 +107,18 @@ def get_thread_messages(db: Session, message_id, current_user_id=None) -> Dict[s
         Message.parent_id == message_id
     ).order_by(Message.created_at.asc()).all()
 
-    hydrated_parent = hydrate_message_response(db, parent, current_user_id)
-    hydrated_replies = [hydrate_message_response(db, r, current_user_id) for r in replies]
-
     return {
-        "parent": hydrated_parent,
-        "replies": hydrated_replies
+        "parent": hydrate_message_response(db, parent, current_user_id),
+        "replies": [hydrate_message_response(db, r, current_user_id) for r in replies]
     }
 
 
 def soft_delete_message(db: Session, message_id, user_id) -> Optional[Message]:
-    """
-    Soft deletes a message if owned by user.
-
-    WHAT IT DOES:
-    Checks author ownership (`user_id == msg.user_id`), sets `is_deleted = True`, and updates content.
-    """
+    """Soft deletes a message if owned by user."""
     msg = db.query(Message).filter(Message.id == message_id).first()
     if not msg:
         return None
 
-    # Enforce ownership check
     if str(msg.user_id) != str(user_id):
         raise PermissionError("You can only delete your own messages")
 
@@ -139,12 +130,7 @@ def soft_delete_message(db: Session, message_id, user_id) -> Optional[Message]:
 
 
 def search_messages(db: Session, query_text: str, channel_id=None, limit: int = 50) -> List[MessageSearchResponse]:
-    """
-    Searches non-deleted messages across channels or within a specific channel.
-
-    WHAT IT DOES:
-    Executes an `ILIKE %query_text%` query on message content.
-    """
+    """Searches non-deleted messages."""
     query = db.query(Message, Channel.name.label("channel_name")).join(
         Channel, Message.channel_id == Channel.id
     ).filter(

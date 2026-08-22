@@ -2,6 +2,10 @@
 
 > A production-grade, real-time team collaboration platform built with **React**, **FastAPI**, **WebSockets**, and **Neon PostgreSQL** — featuring channel-room targeted delivery, composite DB indexing, and an optimised React rendering pipeline.
 
+🌐 **Live Web Application**: [https://slack-r7df.vercel.app/](https://slack-r7df.vercel.app/)  
+⚡ **Backend REST & WS API**: [https://slack-7yia.onrender.com](https://slack-7yia.onrender.com)  
+📖 **API Documentation**: [https://slack-7yia.onrender.com/docs](https://slack-7yia.onrender.com/docs)
+
 ---
 
 ## 📸 Overview

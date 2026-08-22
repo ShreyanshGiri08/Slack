@@ -9,7 +9,12 @@ import { UserProfileModal } from './components/UserProfileModal';
 
 function WorkspaceLayout() {
   const { user } = useAuth();
-  const [showWorkspace, setShowWorkspace] = useState(false);
+
+  // ✅ FIX 2: Persist workspace view in localStorage — survives page reload
+  const [showWorkspace, setShowWorkspace] = useState(() => {
+    return localStorage.getItem('mini_slack_in_workspace') === 'true';
+  });
+
   const [activeThreadMessage, setActiveThreadMessage] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -17,13 +22,26 @@ function WorkspaceLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeDmUser, setActiveDmUser] = useState(null);
 
-  // When user logs out, reset workspace view
+  const enterWorkspace = () => {
+    localStorage.setItem('mini_slack_in_workspace', 'true');
+    setShowWorkspace(true);
+  };
+
+  const exitWorkspace = () => {
+    localStorage.setItem('mini_slack_in_workspace', 'false');
+    setShowWorkspace(false);
+  };
+
+  // When user logs out, reset workspace view and clear persistence
   React.useEffect(() => {
-    if (!user) setShowWorkspace(false);
+    if (!user) {
+      localStorage.setItem('mini_slack_in_workspace', 'false');
+      setShowWorkspace(false);
+    }
   }, [user]);
 
   if (!user || !showWorkspace) {
-    return <LandingPage onEnterWorkspace={() => setShowWorkspace(true)} />;
+    return <LandingPage onEnterWorkspace={enterWorkspace} />;
   }
 
   const handleOpenUserProfile = (userToView) => {
@@ -45,7 +63,7 @@ function WorkspaceLayout() {
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         activeDmUser={activeDmUser}
         onSelectDmUser={(dmUser) => setActiveDmUser(dmUser)}
-        onGoHome={() => setShowWorkspace(false)}
+        onGoHome={exitWorkspace}
       />
 
       {/* Main Channel or DM Chat Area */}

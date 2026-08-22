@@ -73,9 +73,7 @@ export const AuthProvider = ({ children }) => {
         headers: { 'X-User-Id': user.id }
       });
       setChannels(res.data);
-      if (!activeChannel && res.data.length > 0) {
-        setActiveChannel(res.data[0]);
-      }
+      // ✅ FIX 1: Do NOT auto-select a channel — user starts on the empty state screen
     } catch (err) {
       console.log('Channels loading pending backend launch...');
     }

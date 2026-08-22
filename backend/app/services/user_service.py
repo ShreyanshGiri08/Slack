@@ -2,49 +2,40 @@
 User Business Logic Service Module.
 
 WHAT THIS MODULE DOES:
-Implements core business operations for users (registration, login lookup, profile edits, avatar assignment).
+Implements signup registration, password login authentication, profile bio updates, and DiceBear avatar generation.
 
 WHY IT'S STRUCTURED THIS WAY:
-1. Keeps database queries and business policies completely out of FastAPI route handlers.
-2. Uses the free public DiceBear API (`https://api.dicebear.com/7.x/bottts/svg?seed=...`) to auto-generate crisp modern avatars based on usernames.
+1. `register_user`: Checks username uniqueness and assigns DiceBear avatar.
+2. `authenticate_user`: Verifies credentials for user login.
+3. `update_user_profile`: Handles bio and display name modifications.
 """
 
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.user import UserLogin, UserUpdate
+from app.schemas.user import UserSignup, UserLogin, UserUpdate
 
 
-def get_or_create_user(db: Session, login_data: UserLogin) -> User:
+def register_user(db: Session, signup_data: UserSignup) -> User:
     """
-    Finds an existing user by username or creates a new user with an auto-generated DiceBear avatar.
+    Registers a new workspace member account.
 
     WHAT IT DOES:
-    Queries the `users` table for `username`. If found, updates display name & status.
-    If not found, generates an avatar URL and inserts a new `User` record.
-
-    WHY IT'S NEEDED:
-    Provides frictionless login/onboarding without requiring complex password authentication for hackathons.
+    Verifies username is unique, auto-generates DiceBear avatar URL, and creates a User row.
     """
-    user = db.query(User).filter(User.username == login_data.username).first()
-    
-    if user:
-        # Update existing user profile attributes
-        user.display_name = login_data.display_name
-        if login_data.status:
-            user.status = login_data.status
-        db.commit()
-        db.refresh(user)
-        return user
+    existing = db.query(User).filter(User.username == signup_data.username).first()
+    if existing:
+        raise ValueError("Username is already taken")
 
-    # Generate modern robot/person avatar via DiceBear API
-    avatar_url = f"https://api.dicebear.com/7.x/bottts/svg?seed={login_data.username}"
+    avatar_url = f"https://api.dicebear.com/7.x/bottts/svg?seed={signup_data.username}"
     
     new_user = User(
-        username=login_data.username,
-        display_name=login_data.display_name,
+        username=signup_data.username,
+        display_name=signup_data.display_name,
+        password=signup_data.password,
+        bio=signup_data.bio or "Software Engineer & Team Collaborator",
         avatar_url=avatar_url,
-        status=login_data.status or "Online"
+        status="Online"
     )
     db.add(new_user)
     db.commit()
@@ -52,33 +43,33 @@ def get_or_create_user(db: Session, login_data: UserLogin) -> User:
     return new_user
 
 
-def get_user_by_id(db: Session, user_id) -> Optional[User]:
+def authenticate_user(db: Session, login_data: UserLogin) -> User:
     """
-    Fetches a user profile by UUID.
+    Authenticates an existing user by username and password.
 
     WHAT IT DOES:
-    Executes a single primary key lookup on the `users` table.
+    Queries user by username and validates password.
     """
+    user = db.query(User).filter(User.username == login_data.username).first()
+    if not user:
+        raise ValueError("Invalid username or password")
+    if user.password != login_data.password:
+        raise ValueError("Invalid username or password")
+    return user
+
+
+def get_user_by_id(db: Session, user_id) -> Optional[User]:
+    """Fetches user profile by UUID."""
     return db.query(User).filter(User.id == user_id).first()
 
 
 def get_all_users(db: Session) -> List[User]:
-    """
-    Lists all workspace members.
-
-    WHAT IT DOES:
-    Returns all rows in the `users` table ordered by display name.
-    """
+    """Lists all workspace members."""
     return db.query(User).order_by(User.display_name.asc()).all()
 
 
 def update_user_profile(db: Session, user_id, update_data: UserUpdate) -> Optional[User]:
-    """
-    Updates profile attributes for an existing user.
-
-    WHAT IT DOES:
-    Applies non-null patch values to user record and persists changes.
-    """
+    """Updates display name, status, bio, or avatar URL."""
     user = get_user_by_id(db, user_id)
     if not user:
         return None
@@ -87,6 +78,8 @@ def update_user_profile(db: Session, user_id, update_data: UserUpdate) -> Option
         user.display_name = update_data.display_name
     if update_data.status is not None:
         user.status = update_data.status
+    if update_data.bio is not None:
+        user.bio = update_data.bio
     if update_data.avatar_url is not None:
         user.avatar_url = update_data.avatar_url
 

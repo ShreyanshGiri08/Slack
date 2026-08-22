@@ -7,11 +7,15 @@ import EmojiPicker from 'emoji-picker-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile }) => {
-  const { user, activeChannel, theme, toggleTheme, socket, refreshChannels } = useAuth();
+  const { user, activeChannel, channels, theme, toggleTheme, socket, refreshChannels } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
+  const [dmNotifications, setDmNotifications] = useState([]);
   const messagesEndRef = useRef(null);
+
+  // Pick a stable carrier channel for DM transport (first channel in list)
+  const dmCarrierChannel = channels?.[0];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,16 +65,36 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
         const { event_type, channel_id, data } = payload;
 
         if (event_type === 'NEW_MESSAGE') {
-          // If in DM mode, only append if matching DM pair
-          if (activeDmUser) {
-            const isDmPair = (data.user_id === user.id && data.recipient_id === activeDmUser.id) ||
-                            (data.user_id === activeDmUser.id && data.recipient_id === user.id);
-            if (isDmPair) {
+          const isIncomingDm = data.recipient_id === user.id || data.user_id === user.id;
+          const isDmMessage = !!data.recipient_id;
+
+          if (isDmMessage) {
+            // ── DM routing: only show in DM view between the correct pair ──
+            const isDmPair =
+              (data.user_id === user.id && data.recipient_id === activeDmUser?.id) ||
+              (data.user_id === activeDmUser?.id && data.recipient_id === user.id);
+
+            if (activeDmUser && isDmPair) {
               setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
               scrollToBottom();
             }
-          } else if (channel_id === activeChannel?.id && !data.recipient_id) {
-            // Public channel stream (ignore DMs)
+
+            // 🔔 DM Notification: if the DM is for me but I'm not in that DM view
+            if (data.recipient_id === user.id && data.user_id !== user.id) {
+              if (!activeDmUser || activeDmUser.id !== data.user_id) {
+                setDmNotifications(prev => [
+                  ...prev.filter(n => n.senderId !== data.user_id),
+                  {
+                    senderId: data.user_id,
+                    senderName: data.author?.display_name || 'Someone',
+                    preview: data.content?.slice(0, 60),
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  }
+                ]);
+              }
+            }
+          } else if (!isDmMessage && channel_id === activeChannel?.id) {
+            // ── Public channel message: only show if no recipient_id ──
             setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
             scrollToBottom();
             refreshChannels();
@@ -98,15 +122,18 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
     setShowPicker(false);
 
     try {
-      if (activeDmUser && activeChannel) {
-        // Send DM with recipient_id attached
+      if (activeDmUser) {
+        // ✅ DMs always use a dedicated carrier channel (first channel), NEVER the active public channel
+        // This ensures DMs never appear in any public channel stream
+        const carrierId = dmCarrierChannel?.id || activeChannel?.id;
+        if (!carrierId) return;
         await apiClient.post(
-          `/channels/${activeChannel.id}/messages`,
+          `/channels/${carrierId}/messages`,
           { content: textToSend, recipient_id: activeDmUser.id },
           { headers: { 'X-User-Id': user.id } }
         );
       } else if (activeChannel?.id) {
-        // Send public channel message
+        // Send public channel message (no recipient_id = public)
         await apiClient.post(
           `/channels/${activeChannel.id}/messages`,
           { content: textToSend },
@@ -152,6 +179,29 @@ export const ChatArea = ({ activeDmUser, onOpenThread, onSelectUserForProfile })
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-slack-darkBg relative overflow-hidden transition-colors duration-300">
+
+      {/* 🔔 DM Notification Toasts */}
+      <div className="absolute top-16 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        <AnimatePresence>
+          {dmNotifications.map((notif) => (
+            <motion.div
+              key={notif.senderId}
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 60 }}
+              className="pointer-events-auto flex items-start gap-3 bg-indigo-600 text-white px-4 py-3 rounded-2xl shadow-2xl max-w-xs border border-indigo-400/40 cursor-pointer hover:bg-indigo-500 transition-colors"
+              onClick={() => setDmNotifications(prev => prev.filter(n => n.senderId !== notif.senderId))}
+            >
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0 text-base">💬</div>
+              <div className="min-w-0">
+                <p className="text-xs font-black">DM from {notif.senderName}</p>
+                <p className="text-xs text-indigo-200 truncate mt-0.5">{notif.preview}</p>
+                <p className="text-[10px] text-indigo-300 mt-0.5">{notif.time} · tap to dismiss</p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
       {/* Header bar */}
       <div className="h-14 px-6 flex items-center justify-between glass-header z-10">
         {activeDmUser ? (

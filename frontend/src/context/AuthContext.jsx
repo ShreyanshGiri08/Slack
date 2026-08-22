@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   // Connect WebSocket when user is logged in
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.id) {
       if (socket) {
         socket.close();
         setSocket(null);
@@ -46,21 +46,23 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
+    let ws = null;
     try {
       const wsUrl = getWebSocketUrl(user.id);
-      const ws = new WebSocket(wsUrl);
+      ws = new WebSocket(wsUrl);
 
-      ws.onopen = () => console.log('WebSocket connected');
-      ws.onerror = (e) => console.log('WebSocket connection pending...');
+      ws.onopen = () => console.log('WebSocket connection established');
+      ws.onerror = () => console.log('WebSocket waiting for FastAPI backend...');
+      ws.onclose = () => console.log('WebSocket closed cleanly');
 
       setSocket(ws);
-
-      return () => {
-        ws.close();
-      };
     } catch (err) {
-      console.warn('WebSocket init warning:', err);
+      console.warn('WebSocket setup warning:', err);
     }
+
+    return () => {
+      if (ws) ws.close();
+    };
   }, [user?.id]);
 
   // Fetch channels list with unread indicators
@@ -75,7 +77,7 @@ export const AuthProvider = ({ children }) => {
         setActiveChannel(res.data[0]);
       }
     } catch (err) {
-      console.log('Backend not reachable or channels pending');
+      console.log('Channels loading pending backend launch...');
     }
   };
 

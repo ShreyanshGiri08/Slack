@@ -2,46 +2,54 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { MessageItem } from './MessageItem';
 import { apiClient } from '../api/client';
-import { Hash, Send, Smile, Info, Sparkles } from 'lucide-react';
+import { Hash, Send, Smile, UserCheck, FileText } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const ChatArea = ({ onOpenThread }) => {
+export const ChatArea = ({ activeDmUser, onOpenThread }) => {
   const { user, activeChannel, theme, socket, refreshChannels } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
-  const [typingUsers, setTypingUsers] = useState({});
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Fetch channel messages and mark as read
+  // Fetch channel or DM messages
   useEffect(() => {
-    if (!activeChannel || !user) return;
+    if (!user) return;
 
     const loadChannelData = async () => {
       try {
-        const res = await apiClient.get(`/channels/${activeChannel.id}/messages`, {
-          headers: { 'X-User-Id': user.id }
-        });
-        setMessages(res.data);
-        scrollToBottom();
+        if (!activeDmUser && activeChannel) {
+          const res = await apiClient.get(`/channels/${activeChannel.id}/messages`, {
+            headers: { 'X-User-Id': user.id }
+          });
+          setMessages(res.data);
+          scrollToBottom();
 
-        // Mark channel as read
-        await apiClient.post(`/channels/${activeChannel.id}/read`, {}, {
-          headers: { 'X-User-Id': user.id }
-        });
-        refreshChannels();
+          await apiClient.post(`/channels/${activeChannel.id}/read`, {}, {
+            headers: { 'X-User-Id': user.id }
+          });
+          refreshChannels();
+        } else if (activeDmUser) {
+          // Direct message filter: show messages between user and activeDmUser
+          const res = await apiClient.get(`/channels/${activeChannel?.id || ''}/messages`, {
+            headers: { 'X-User-Id': user.id }
+          });
+          // Filter DMs or show direct chat stream
+          setMessages(res.data.filter(m => m.user_id === activeDmUser.id || m.user_id === user.id));
+          scrollToBottom();
+        }
       } catch (err) {
         console.error('Failed to load messages:', err);
       }
     };
 
     loadChannelData();
-  }, [activeChannel, user]);
+  }, [activeChannel, activeDmUser, user]);
 
   // Real-time WebSocket Listeners
   useEffect(() => {
@@ -52,9 +60,8 @@ export const ChatArea = ({ onOpenThread }) => {
         const payload = JSON.parse(event.data);
         const { event_type, channel_id, data } = payload;
 
-        if (event_type === 'NEW_MESSAGE' && channel_id === activeChannel?.id) {
+        if (event_type === 'NEW_MESSAGE') {
           setMessages(prev => {
-            // Avoid duplicate message append
             if (prev.some(m => m.id === data.id)) return prev;
             return [...prev, data];
           });
@@ -76,18 +83,22 @@ export const ChatArea = ({ onOpenThread }) => {
 
   const handleSendMessage = async (e) => {
     e?.preventDefault();
-    if (!inputText.trim() || !activeChannel || !user) return;
+    if (!inputText.trim() || !user) return;
+    if (!activeDmUser && !activeChannel) return;
 
     const textToSend = inputText.trim();
     setInputText('');
     setShowPicker(false);
 
     try {
-      await apiClient.post(
-        `/channels/${activeChannel.id}/messages`,
-        { content: textToSend },
-        { headers: { 'X-User-Id': user.id } }
-      );
+      const channelId = activeChannel?.id;
+      if (channelId) {
+        await apiClient.post(
+          `/channels/${channelId}/messages`,
+          { content: textToSend },
+          { headers: { 'X-User-Id': user.id } }
+        );
+      }
     } catch (err) {
       console.error('Failed to send message:', err);
     }
@@ -125,27 +136,36 @@ export const ChatArea = ({ onOpenThread }) => {
     }
   };
 
-  if (!activeChannel) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-slack-darkBg text-gray-400">
-        Select a channel to start messaging
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-slack-darkBg relative overflow-hidden">
       {/* Header bar */}
       <div className="h-14 px-6 flex items-center justify-between glass-header z-10">
-        <div className="flex items-center gap-2">
-          <Hash className="w-5 h-5 text-indigo-500" />
-          <h2 className="font-bold text-base text-gray-900 dark:text-white">
-            {activeChannel.name}
-          </h2>
-          <span className="text-xs text-gray-400 border-l border-gray-300 dark:border-slate-700 pl-3 ml-1 truncate max-w-md">
-            {activeChannel.description}
-          </span>
-        </div>
+        {activeDmUser ? (
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img src={activeDmUser.avatar_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" />
+            </div>
+            <div>
+              <h2 className="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                {activeDmUser.display_name}
+              </h2>
+              <p className="text-[11px] text-gray-500 dark:text-slate-400 italic truncate max-w-lg">
+                {activeDmUser.bio || "Software Engineer & Team Collaborator"}
+              </p>
+            </div>
+          </div>
+        ) : activeChannel ? (
+          <div className="flex items-center gap-2">
+            <Hash className="w-5 h-5 text-indigo-500" />
+            <h2 className="font-bold text-base text-gray-900 dark:text-white">
+              {activeChannel.name}
+            </h2>
+            <span className="text-xs text-gray-400 border-l border-gray-300 dark:border-slate-700 pl-3 ml-1 truncate max-w-md">
+              {activeChannel.description}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {/* Message Feed list */}
@@ -177,12 +197,11 @@ export const ChatArea = ({ onOpenThread }) => {
                 handleSendMessage();
               }
             }}
-            placeholder={`Message #${activeChannel.name}...`}
+            placeholder={activeDmUser ? `Direct message @${activeDmUser.display_name}...` : `Message #${activeChannel?.name || 'channel'}...`}
             rows={2}
             className="w-full bg-transparent px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none"
           />
 
-          {/* Composer Footer Actions */}
           <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200/60 dark:border-slate-700/60">
             <div className="flex items-center gap-1">
               <button
@@ -204,7 +223,6 @@ export const ChatArea = ({ onOpenThread }) => {
             </button>
           </div>
 
-          {/* Main Composer Emoji Picker */}
           {showPicker && (
             <div className="absolute right-0 bottom-16 z-50 shadow-2xl">
               <EmojiPicker

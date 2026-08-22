@@ -136,7 +136,7 @@ export const MessageItem = ({ message, onDelete, onOpenThread, onAddReaction, on
                   exit={{ opacity: 0, scale: 0.92, y: 8 }}
                   transition={{ duration: 0.15 }}
                   // Fixed z-index above everything so it's never clipped
-                  className="absolute right-0 bottom-10 z-[9999] shadow-2xl rounded-2xl overflow-hidden"
+                  className="absolute right-0 top-8 z-[9999] shadow-2xl rounded-2xl overflow-hidden"
                   style={{ filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.4))' }}
                 >
                   <EmojiPicker

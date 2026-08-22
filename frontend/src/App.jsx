@@ -45,6 +45,7 @@ function WorkspaceLayout() {
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         activeDmUser={activeDmUser}
         onSelectDmUser={(dmUser) => setActiveDmUser(dmUser)}
+        onGoHome={() => setShowWorkspace(false)}
       />
 
       {/* Main Channel or DM Chat Area */}

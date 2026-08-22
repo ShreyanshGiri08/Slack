@@ -4,7 +4,7 @@ import { apiClient } from '../api/client';
 import { Hash, Sun, Moon, Search, MessageSquare, ChevronLeft, ChevronRight, LogOut, Users, Sparkles, UserCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export const Sidebar = ({ onOpenSearch, onOpenProfile, isCollapsed, onToggleCollapse, activeDmUser, onSelectDmUser }) => {
+export const Sidebar = ({ onOpenSearch, onOpenProfile, isCollapsed, onToggleCollapse, activeDmUser, onSelectDmUser, onGoHome }) => {
   const { user, setUser, theme, toggleTheme, activeChannel, setActiveChannel, channels } = useAuth();
   const [workspaceMembers, setWorkspaceMembers] = useState([]);
 
@@ -28,17 +28,30 @@ export const Sidebar = ({ onOpenSearch, onOpenProfile, isCollapsed, onToggleColl
       {/* Sidebar Header */}
       <div className="h-14 px-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 bg-slate-200/50 dark:bg-slate-900/50">
         {!isCollapsed && (
-          <div className="flex items-center space-x-2.5 truncate">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center font-bold text-white shadow-md flex-shrink-0">
+          <button
+            onClick={onGoHome}
+            className="flex items-center space-x-2.5 truncate hover:opacity-80 transition-opacity"
+            title="Go to Home Dashboard"
+          >
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center font-bold text-white shadow-md flex-shrink-0 hover:shadow-indigo-500/40 hover:scale-105 transition-all">
               S
             </div>
-            <div className="truncate">
+            <div className="truncate text-left">
               <h1 className="font-bold text-sm leading-tight text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
                 TechCorp <Sparkles className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
               </h1>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">HQ-Primary-Channel</p>
             </div>
-          </div>
+          </button>
+        )}
+        {isCollapsed && (
+          <button
+            onClick={onGoHome}
+            title="Go to Home Dashboard"
+            className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center font-bold text-white shadow-md mx-auto hover:scale-110 transition-all"
+          >
+            S
+          </button>
         )}
 
         <div className="flex items-center gap-1 ml-auto">

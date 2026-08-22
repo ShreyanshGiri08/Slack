@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
-import { Sparkles, MessageSquare, Hash, Zap, Smile, ArrowRight, Sun, Moon, Users, RefreshCw, Eye, EyeOff, ShieldCheck, Lock, Globe, Cpu } from 'lucide-react';
+import { Sparkles, MessageSquare, Hash, Zap, Smile, ArrowRight, Sun, Moon, Users, RefreshCw, Eye, EyeOff, Lock, Globe, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AVATAR_OPTIONS = [
@@ -74,14 +74,14 @@ export const LandingPage = () => {
       desc: "Organize discussions into fixed channels like #general, #engineering, #random, and launch threaded replies to keep discussions contextually focused.",
       icon: <Hash className="w-6 h-6 text-indigo-500" />,
       content: (
-        <div className="space-y-3 p-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs shadow-xl">
+        <div className="space-y-3 p-5 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-sm shadow-xl">
           <div className="flex items-center gap-2">
             <span className="font-bold text-indigo-400">#engineering</span>
-            <span className="text-slate-400">Today at 10:15 AM</span>
+            <span className="text-slate-400 text-xs">Today at 10:15 AM</span>
           </div>
           <p className="text-slate-200">🚀 Microservice architecture deployment completed cleanly on Neon Postgres!</p>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold">
-            <MessageSquare className="w-3.5 h-3.5" /> 4 Replies
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold text-xs">
+            <MessageSquare className="w-4 h-4" /> 4 Replies
           </div>
         </div>
       )
@@ -91,12 +91,12 @@ export const LandingPage = () => {
       desc: "Express feedback instantly with full emoji picker integration and aggregated reaction counters.",
       icon: <Smile className="w-6 h-6 text-purple-500" />,
       content: (
-        <div className="p-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs space-y-3 shadow-xl">
+        <div className="p-5 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-sm space-y-3 shadow-xl">
           <p className="text-slate-200">Should we ship v2.0 feature specs to staging tonight?</p>
           <div className="flex gap-2">
-            <span className="px-2.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-bold">🔥 8</span>
-            <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-bold">🎉 5</span>
-            <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-bold">✅ 12</span>
+            <span className="px-3 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-bold text-xs">🔥 8</span>
+            <span className="px-3 py-1.5 rounded-full bg-slate-800 text-slate-300 font-bold text-xs">🎉 5</span>
+            <span className="px-3 py-1.5 rounded-full bg-slate-800 text-slate-300 font-bold text-xs">✅ 12</span>
           </div>
         </div>
       )
@@ -106,12 +106,12 @@ export const LandingPage = () => {
       desc: "Chat 1-on-1 privately with team members without leaking into public channels.",
       icon: <Users className="w-6 h-6 text-pink-500" />,
       content: (
-        <div className="p-4 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-xs space-y-2 shadow-xl">
+        <div className="p-5 bg-slate-900/90 border border-slate-700/60 rounded-2xl text-sm space-y-2 shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md">DM</div>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md text-base">DM</div>
             <div>
               <div className="font-bold text-white">Private Chat with Alex Chen</div>
-              <div className="text-slate-400 text-[11px]">Software Engineer • Online</div>
+              <div className="text-slate-400 text-xs">Software Engineer • Online</div>
             </div>
           </div>
         </div>
@@ -119,60 +119,63 @@ export const LandingPage = () => {
     }
   ];
 
+  const marqueeItems = [
+    { text: "REAL-TIME WEBSOCKET ENGINE", icon: <Zap className="w-4 h-4 text-amber-400" /> },
+    { text: "THREADED MESSAGE REPLIES", icon: <MessageSquare className="w-4 h-4 text-indigo-400" /> },
+    { text: "EMOJI REACTION POPOVERS", icon: <Smile className="w-4 h-4 text-pink-400" /> },
+    { text: "ISOLATED PRIVATE DIRECT MESSAGES", icon: <Lock className="w-4 h-4 text-emerald-400" /> },
+    { text: "NEON POSTGRES PERSISTENCE", icon: <Globe className="w-4 h-4 text-purple-400" /> },
+  ];
+
   return (
-    <div className={`min-h-screen w-full transition-colors duration-500 flex flex-col relative overflow-x-hidden ${
+    <div className={`min-h-screen w-full overflow-y-auto transition-colors duration-500 flex flex-col relative selection:bg-indigo-500 selection:text-white ${
       theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-800'
     }`}>
-      {/* Dynamic Marquee Pill Banner */}
-      <div className="w-full bg-slate-900/90 dark:bg-slate-950/90 border-b border-indigo-500/20 text-indigo-400 text-xs font-bold py-2 overflow-hidden z-30 shadow-sm">
-        <div className="animate-marquee whitespace-nowrap flex gap-12 justify-around">
-          <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-amber-400" /> REAL-TIME WEBSOCKET ENGINE</span>
-          <span>•</span>
-          <span className="flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5 text-indigo-400" /> THREADED MESSAGE REPLIES</span>
-          <span>•</span>
-          <span className="flex items-center gap-2"><Smile className="w-3.5 h-3.5 text-pink-400" /> EMOJI REACTION POPOVERS</span>
-          <span>•</span>
-          <span className="flex items-center gap-2"><Lock className="w-3.5 h-3.5 text-emerald-400" /> ISOLATED PRIVATE DIRECT MESSAGES</span>
-          <span>•</span>
-          <span className="flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-purple-400" /> NEON POSTGRES PERSISTENCE</span>
+      {/* Prominent High-Impact Horizontal Ticker Marquee */}
+      <div className="w-full bg-slate-900 border-b border-indigo-500/30 text-indigo-400 overflow-hidden z-30 shadow-md py-3">
+        <div className="animate-marquee-track flex items-center gap-12 text-sm font-black tracking-widest uppercase">
+          {[...marqueeItems, ...marqueeItems, ...marqueeItems].map((item, idx) => (
+            <span key={idx} className="flex items-center gap-3 flex-shrink-0">
+              {item.icon}
+              <span>{item.text}</span>
+              <span className="text-slate-600 font-normal">•</span>
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Floating Animated Technology Icons */}
+      {/* Floating Background Icons */}
       <motion.div
-        animate={{ y: [-15, 15, -15], rotate: [0, 10, -10, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-28 left-[8%] text-indigo-500/30 dark:text-indigo-400/20 pointer-events-none z-0"
-      >
-        <Hash className="w-16 h-16" />
-      </motion.div>
-
-      <motion.div
-        animate={{ y: [15, -15, 15], rotate: [0, -12, 12, 0] }}
+        animate={{ y: [-20, 20, -20], rotate: [0, 15, -15, 0] }}
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-40 right-[10%] text-purple-500/30 dark:text-purple-400/20 pointer-events-none z-0"
+        className="absolute top-36 left-[6%] text-indigo-500/40 dark:text-indigo-400/30 pointer-events-none z-0"
       >
-        <Zap className="w-16 h-16" />
+        <Hash className="w-20 h-20" />
       </motion.div>
 
       <motion.div
-        animate={{ y: [-20, 20, -20], scale: [1, 1.1, 1] }}
+        animate={{ y: [20, -20, 20], rotate: [0, -15, 15, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute bottom-32 left-[12%] text-pink-500/30 dark:text-pink-400/20 pointer-events-none z-0"
+        className="absolute top-48 right-[8%] text-purple-500/40 dark:text-purple-400/30 pointer-events-none z-0"
       >
-        <Smile className="w-16 h-16" />
+        <Zap className="w-20 h-20" />
       </motion.div>
 
       <motion.div
-        animate={{ y: [20, -20, 20], rotate: [0, 15, -15, 0] }}
+        animate={{ y: [-25, 25, -25], scale: [1, 1.15, 1] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute bottom-40 right-[12%] text-indigo-500/30 dark:text-indigo-400/20 pointer-events-none z-0"
+        className="absolute bottom-40 left-[10%] text-pink-500/40 dark:text-pink-400/30 pointer-events-none z-0"
       >
-        <MessageSquare className="w-16 h-16" />
+        <Smile className="w-20 h-20" />
       </motion.div>
 
-      {/* Background Gradient Orbs */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-500/20 via-purple-500/15 to-pink-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <motion.div
+        animate={{ y: [25, -25, 25], rotate: [0, 20, -20, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-48 right-[10%] text-indigo-500/40 dark:text-indigo-400/30 pointer-events-none z-0"
+      >
+        <MessageSquare className="w-20 h-20" />
+      </motion.div>
 
       {/* Navigation Header */}
       <header className={`h-20 px-8 flex items-center justify-between z-20 border-b backdrop-blur-md transition-colors ${
@@ -217,7 +220,7 @@ export const LandingPage = () => {
       </header>
 
       {/* Hero Body */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center z-10 max-w-6xl mx-auto w-full relative">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center z-10 max-w-6xl mx-auto w-full relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -260,9 +263,9 @@ export const LandingPage = () => {
           </div>
         </motion.div>
 
-        {/* 3D Interactive Feature Showcase */}
-        <div className="mt-16 w-full max-w-4xl z-10">
-          <div className="flex justify-center gap-2 mb-6 flex-wrap">
+        {/* 3D Showcase Card */}
+        <div className="mt-16 w-full max-w-4xl z-10 pb-16">
+          <div className="flex justify-center gap-3 mb-6 flex-wrap">
             {featureSlides.map((slide, idx) => (
               <button
                 key={idx}
@@ -284,10 +287,10 @@ export const LandingPage = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, scale: 0.96, rotateX: 10 }}
-              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
-              exit={{ opacity: 0, scale: 0.96, rotateX: -10 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.3 }}
               className={`p-8 rounded-3xl border shadow-2xl text-left ${
                 theme === 'dark' ? 'bg-slate-900/90 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800 shadow-xl'
               }`}
@@ -308,7 +311,7 @@ export const LandingPage = () => {
         </div>
       </main>
 
-      {/* Auth Modal with Password Toggle */}
+      {/* Auth Modal with Password Visibility Toggle */}
       <AnimatePresence>
         {showAuthModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
@@ -375,7 +378,7 @@ export const LandingPage = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. alex_chen"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
                   />
                 </div>
 
@@ -388,7 +391,7 @@ export const LandingPage = () => {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="e.g. Alex Chen"
-                      className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
                     />
                   </div>
                 )}
@@ -402,7 +405,7 @@ export const LandingPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-4 py-3 pr-10 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full px-4 py-3 pr-10 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
                     />
                     <button
                       type="button"
@@ -423,7 +426,7 @@ export const LandingPage = () => {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       placeholder="Tell the team about yourself..."
-                      className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500 resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-sm focus:outline-none focus:border-indigo-500 resize-none text-slate-900 dark:text-white"
                     />
                   </div>
                 )}

@@ -16,29 +16,33 @@
   }
 }
 
-@keyframes marquee {
+@keyframes marquee-scroll {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
 }
 
-.animate-marquee {
-  display: inline-block;
-  white-space: nowrap;
-  animation: marquee 25s linear infinite;
+.animate-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 30s linear infinite;
+}
+
+.animate-marquee-track:hover {
+  animation-play-state: paused;
 }
 
 /* Custom sleek scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
+  background: rgba(156, 163, 175, 0.4);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.5);
+  background: rgba(156, 163, 175, 0.6);
 }

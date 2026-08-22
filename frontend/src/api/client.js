@@ -1,16 +1,15 @@
 import axios from 'axios';
 
-// Dynamically use current hostname so requests succeed regardless of local IP or localhost origin
-const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const API_BASE_URL = `http://${hostname}:8000/api/v1`;
-
+// Relative path leverages Vite dev server proxy to resolve origin mismatches and CORS rules seamlessly
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 export const getWebSocketUrl = (userId) => {
-  return `ws://${hostname}:8000/ws/workspace/${userId}`;
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
+  return `${protocol}//${host}/ws/workspace/${userId}`;
 };

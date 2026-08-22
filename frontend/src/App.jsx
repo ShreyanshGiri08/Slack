@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
